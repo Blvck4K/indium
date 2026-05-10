@@ -11,6 +11,8 @@ const Withdraw = () => {
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
   const [userPlans, setUserPlans] = useState<any[]>([]);
+  const [lockedBalance, setLockedBalance] = useState<number>(0);
+  const [availableBalance, setAvailableBalance] = useState<number>(0);
 
   // Bank Details State
   const [accountNumber, setAccountNumber] = useState('');
@@ -37,6 +39,24 @@ const Withdraw = () => {
 
         if (!error && data) {
           setUserPlans(data);
+          
+          // Calculate locked balance
+          let locked = 0;
+          const now = new Date();
+          data.forEach((plan: any) => {
+            if (plan.investment_amount === 3000 || plan.investment_amount === 5000) {
+              const createdAt = new Date(plan.created_at);
+              const diffTime = Math.abs(now.getTime() - createdAt.getTime());
+              const diffDays = diffTime / (1000 * 60 * 60 * 24);
+              
+              if (diffDays < 3) {
+                // If it's less than 3 days, all returns received so far are locked
+                locked += Number(plan.total_received || 0);
+              }
+            }
+          });
+          setLockedBalance(locked);
+          setAvailableBalance(Math.max(0, (profile.withdrawable_balance || 0) - locked));
         }
       }
     };
@@ -59,24 +79,16 @@ const Withdraw = () => {
       return;
     }
 
-    // Check for 3000/5000 investment 3-day restriction
-    const restrictedPlans = userPlans.filter(plan =>
-      plan.investment_amount === 3000 || plan.investment_amount === 5000
-    );
+    // Check for 3000/5000 investment 3-day restriction (Granular)
+    const numAmount = Number(amount);
 
-    if (restrictedPlans.length > 0) {
-      const now = new Date();
-      const hasRecentRestrictedPlan = restrictedPlans.some(plan => {
-        const createdAt = new Date(plan.created_at);
-        const diffTime = Math.abs(now.getTime() - createdAt.getTime());
-        const diffDays = diffTime / (1000 * 60 * 60 * 24);
-        return diffDays < 3;
-      });
-
-      if (hasRecentRestrictedPlan) {
-        setError('Withdrawals for ₦3,000 and ₦5,000 investments are only available after 3 days.');
-        return;
+    if (numAmount > availableBalance) {
+      if (lockedBalance > 0) {
+        setError(`Insufficient available balance. ₦${lockedBalance.toLocaleString()} is currently locked until 3 days after your ₦3,000/₦5,000 investments.`);
+      } else {
+        setError('Insufficient withdrawable balance.');
       }
+      return;
     }
 
     const numAmount = Number(amount);
@@ -88,12 +100,8 @@ const Withdraw = () => {
 
     if (!profile) return;
 
-    if (numAmount > profile.withdrawable_balance) {
-      if (numAmount <= profile.balance + profile.withdrawable_balance) {
-        setError('You can only withdraw earned returns, rewards, and referral bonuses. Please invest your deposited funds to earn withdrawable returns.');
-      } else {
-        setError('Insufficient withdrawable balance.');
-      }
+    if (numAmount > availableBalance) {
+      setError('Insufficient available balance.');
       return;
     }
 
@@ -138,8 +146,8 @@ const Withdraw = () => {
   };
 
   const handleMax = () => {
-    if (profile?.withdrawable_balance) {
-      setAmount(profile.withdrawable_balance.toString());
+    if (availableBalance) {
+      setAmount(availableBalance.toString());
     }
   };
 
@@ -172,8 +180,18 @@ const Withdraw = () => {
           </span>
           <h2 style={{ fontSize: '38px', fontWeight: '800', margin: '0 0 16px 0', letterSpacing: '-1px' }}>
             <span style={{ color: '#10b981', marginRight: '4px' }}>₦</span>
-            {profile?.withdrawable_balance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+            {availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h2>
+
+          {lockedBalance > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', padding: '10px 16px', borderRadius: '12px', marginBottom: '16px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+              <Clock size={16} style={{ marginRight: '10px' }} />
+              <div>
+                <span style={{ fontSize: '11px', display: 'block', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Locked (3-Day Rule)</span>
+                <span style={{ fontSize: '14px', fontWeight: '800' }}>₦{lockedBalance.toLocaleString()}</span>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', padding: '12px 16px', borderRadius: '12px', backdropFilter: 'blur(4px)' }}>
             <div style={{ flex: 1 }}>
@@ -260,8 +278,8 @@ const Withdraw = () => {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0', padding: '0 4px' }}>
           <span style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8' }}>Min: ₦2,000</span>
-          {amount && Number(amount) > (profile?.withdrawable_balance || 0) && (
-            <span style={{ fontSize: '12px', fontWeight: '700', color: '#ef4444' }}>Exceeds balance</span>
+          {amount && Number(amount) > availableBalance && (
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#ef4444' }}>Exceeds available</span>
           )}
         </div>
       </div>
