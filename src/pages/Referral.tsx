@@ -43,6 +43,26 @@ const Referral = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const shareWhatsApp = () => {
+    const text = `Join Indium wealth platform using my referral code: ${referralCode}. Sign up here: ${referralLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const shareTwitter = () => {
+    const text = `Join Indium wealth platform using my referral code: ${referralCode}. Sign up here: ${referralLink}`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const shareLinkedIn = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`, '_blank');
+  };
+
+  const shareEmail = () => {
+    const subject = "Join Indium Wealth Platform";
+    const body = `Join Indium wealth platform using my referral code: ${referralCode}. Sign up here: ${referralLink}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   return (
     <div className="page-container" style={{ paddingBottom: '100px' }}>
       <div className="mb-4">
@@ -145,7 +165,9 @@ const Referral = () => {
         <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '20px' }}>Share via</h3>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <button style={{
+          <button 
+            onClick={shareLinkedIn}
+            style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -161,7 +183,9 @@ const Referral = () => {
             <Share2 size={18} style={{ marginRight: '8px', color: '#0f172a' }} /> LinkedIn
           </button>
           
-          <button style={{
+          <button 
+            onClick={shareWhatsApp}
+            style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -177,7 +201,9 @@ const Referral = () => {
             <MessageCircle size={18} style={{ marginRight: '8px', color: '#0f172a' }} /> WhatsApp
           </button>
           
-          <button style={{
+          <button 
+            onClick={shareEmail}
+            style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -193,7 +219,9 @@ const Referral = () => {
             <Mail size={18} style={{ marginRight: '8px', color: '#0f172a' }} /> Email
           </button>
           
-          <button style={{
+          <button 
+            onClick={shareTwitter}
+            style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

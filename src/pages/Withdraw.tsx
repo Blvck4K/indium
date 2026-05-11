@@ -10,7 +10,6 @@ const Withdraw = () => {
   const { profile, updateWithdrawableBalance } = useAuth();
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
-  const [userPlans, setUserPlans] = useState<any[]>([]);
   const [lockedBalance, setLockedBalance] = useState<number>(0);
   const [availableBalance, setAvailableBalance] = useState<number>(0);
 
@@ -38,7 +37,6 @@ const Withdraw = () => {
           .eq('status', 'Running');
 
         if (!error && data) {
-          setUserPlans(data);
           
           // Calculate locked balance
           let locked = 0;
@@ -82,17 +80,6 @@ const Withdraw = () => {
     // Check for 3000/5000 investment 3-day restriction (Granular)
     const numAmount = Number(amount);
 
-    if (numAmount > availableBalance) {
-      if (lockedBalance > 0) {
-        setError(`Insufficient available balance. ₦${lockedBalance.toLocaleString()} is currently locked until 3 days after your ₦3,000/₦5,000 investments.`);
-      } else {
-        setError('Insufficient withdrawable balance.');
-      }
-      return;
-    }
-
-    const numAmount = Number(amount);
-
     if (isNaN(numAmount) || numAmount < 2000) {
       setError('Minimum withdrawal amount is ₦2,000.');
       return;
@@ -101,7 +88,11 @@ const Withdraw = () => {
     if (!profile) return;
 
     if (numAmount > availableBalance) {
-      setError('Insufficient available balance.');
+      if (lockedBalance > 0) {
+        setError(`Insufficient available balance. ₦${lockedBalance.toLocaleString()} is currently locked until 3 days after your ₦3,000/₦5,000 investments.`);
+      } else {
+        setError('Insufficient available balance.');
+      }
       return;
     }
 
